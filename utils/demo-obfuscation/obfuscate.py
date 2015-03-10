@@ -15,7 +15,6 @@ def fill_block_with_trash(block):
 
 	builder = Builder.new(block)
 
-	print("here")
 
 	instruction_name_length = 10
 	instruction_name = get_random_string(instruction_name_length)
