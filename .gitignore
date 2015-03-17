@@ -1,1 +1,3 @@
-utils/demo-obfuscation/.idea/
+*/.idea/
+*.bc
+*.ll
