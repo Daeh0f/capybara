@@ -67,7 +67,7 @@ def insert_block_between(block_A, block_B, block_new):
     const = Constant.int(Type.int(), 34)
     switch = builder_new.switch(const, block_A, 1)   # so far HARDCODE but instead of "const" need some PHI function! allocate memory lead to crash :(
     switch.add_case(const, block_B)
-    #TODO: PHI
+    #TODO: PHI !!!!
 
 def obfuscate_function(function):
     name_length = 8
