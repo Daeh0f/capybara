@@ -42,7 +42,6 @@ def generate_graph(number_successors, depth):
         nodes = get_nodes_appropriate_level(digraph, 0, level)
     return digraph
 
-
 def get_random_string(length):
     return ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(length))
 
@@ -64,9 +63,11 @@ def insert_block_between(block_A, block_B, block_new):
     fill_block_a_trash(block_new)
 
     builder_new = Builder.new(block_new)
-    builder_new.branch(block_B)
-
-
+    #builder_new.branch(block_B)
+    const = Constant.int(Type.int(), 34)
+    switch = builder_new.switch(const, block_A, 1)   # so far HARDCODE but instead of "const" need some PHI function! allocate memory lead to crash :(
+    switch.add_case(const, block_B)
+    #TODO: PHI
 
 def obfuscate_function(function):
     name_length = 8
