@@ -64,10 +64,14 @@ def insert_block_between(block_A, block_B, block_new):
 
     builder_new = Builder.new(block_new)
     #builder_new.branch(block_B)
-    const = Constant.int(Type.int(), 34)
-    switch = builder_new.switch(const, block_A, 1)   # so far HARDCODE but instead of "const" need some PHI function! allocate memory lead to crash :(
+
+    const = Constant.int(Type.int(), 25) #value
+    memory = builder_new.alloca(Type.int()) #allocate memory
+    builder_new.store(const, memory)   # write value to memory
+    var = builder_new.load(memory,name="var") # get pointer for use in our purpose (in actually "instruction that loads a value at the memory pointed by ptr")
+
+    switch = builder_new.switch(var, block_A, 1)
     switch.add_case(const, block_B)
-    #TODO: PHI !!!!
 
 def obfuscate_function(function):
     name_length = 8
