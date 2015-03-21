@@ -6,6 +6,9 @@ from llvm import *
 from llvm.core import *
 import networkx as nx
 
+def get_random_string(length):
+    return ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(length))
+
 def get_nodes_appropriate_level(graph, root, level):
     list_of_nodes = set([root])
     for _ in range(level):
@@ -42,46 +45,71 @@ def generate_graph(number_successors, depth):
         nodes = get_nodes_appropriate_level(digraph, 0, level)
     return digraph
 
-def get_random_string(length):
-    return ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(length))
+def insert_graph_into_func(graph, function, place=(0, 1)):
+    block_dict = {}
+    for n in graph.nodes():
+        block = function.append_basic_block(str(n))
+        block_dict[n] = block
+
+    counter = 0
+    flag = True
+    while flag:
+        curr_level_list = get_nodes_appropriate_level(graph, 0, counter)
+        print(curr_level_list, len(curr_level_list))
+        for node in curr_level_list:
+            print(graph.successors(node), len(graph.successors(node)))
+            if len(graph.successors(node)) > 0:
+                builder_root = Builder.new(block_dict[node])
+                if len(graph.successors(node)) > 1:
+                    next_block_value = Constant.int(Type.int(), random.randint(1, len(graph.successors(node))))
+                else:
+                    next_block_value = Constant.int(Type.int(), 1)
+                switch = builder_root.switch(next_block_value, block_dict[random.randint(node, node + len(graph.successors(node)))], len(graph.successors(node)))
+                for i in range(1, len(graph.successors(node)) + 1 ):
+                    block_value = Constant.int(Type.int(), i)
+                    switch.add_case(block_value, block_dict[graph.successors(node)[i - 1]])
+            else:
+                insert_something_between(function.basic_blocks[place[0]], block_dict[0], block_dict[node], function.basic_blocks[place[1]])
+                flag = False
+        counter += 1
+
+
+def insert_something_between(block_A, block_start, block_finish, block_B):
+    "You may insert something like block or graph between block A and B"
+    builder_A = Builder.new(block_A)
+    block_A.instructions[-1].erase_from_parent()
+    builder_A.branch(block_start)
+
+    fill_block_a_trash(block_finish)
+
+    builder_fi = Builder.new(block_finish)
+    builder_fi.branch(block_B)
+
+
 
 def fill_block_a_trash(block):
-    integer_type = Type.int()
-    just_some_const = Constant.int(integer_type, 42)
     builder = Builder.new(block)
     instruction_name_length = 10
     instruction_name = get_random_string(instruction_name_length)
-    some_int_variable = builder.alloca(integer_type)
-    builder.store(just_some_const, some_int_variable)
-    #builder.ret(some_int_variable)
-
-def insert_block_between(block_A, block_B, block_new):
-    builder_A = Builder.new(block_A)
-    block_A.instructions[-1].erase_from_parent()
-    builder_A.branch(block_new)
-
-    fill_block_a_trash(block_new)
-
-    builder_new = Builder.new(block_new)
-    #builder_new.branch(block_B)
-
     const = Constant.int(Type.int(), 25) #value
-    memory = builder_new.alloca(Type.int()) #allocate memory
-    builder_new.store(const, memory)   # write value to memory
-    var = builder_new.load(memory,name="var") # get pointer for use in our purpose (in actually "instruction that loads a value at the memory pointed by ptr")
+    memory = builder.alloca(Type.int()) #allocate memory
+    builder.store(const, memory)   # write value to memory
+    var = builder.load(memory,name="var") # get pointer for use in our purpose (in actually "instruction that loads a value at the memory pointed by ptr")
 
-    switch = builder_new.switch(var, block_A, 1)
-    switch.add_case(const, block_B)
+    #TODO for all: write class variable. Something like that ->>   variable.create_var("some_value")
+    #print(variable.value) >>> some_value
+
+
 
 def obfuscate_function(function):
-    name_length = 8
-    new_block_name  = get_random_string(name_length)
-    new_trash_block = function.append_basic_block(new_block_name)
+    #name_length = 8
+    #new_block_name  = get_random_string(name_length)
+    #new_trash_block = function.append_basic_block(new_block_name)
+    #insert_block_between(function.basic_blocks[0], function.basic_blocks[1], new_trash_block)
 
-    insert_block_between(function.basic_blocks[0], function.basic_blocks[1], new_trash_block)
-
-
-
+    rand_graph = generate_graph(4, 3)
+    insert_graph_into_func(rand_graph, function, (0, 1))
+    #TODO for Alex: check hypothesis: "function.basic_blocks" return block in call order. If yes then place=(0,1) transform place=1
 
 def obfuscate_module(module):
     #integer_type = Type.int()
