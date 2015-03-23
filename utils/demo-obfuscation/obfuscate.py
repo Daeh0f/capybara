@@ -99,7 +99,27 @@ def fill_block_a_trash(block):
     #TODO for all: write class variable. Something like that ->>   variable.create_var("some_value")
     #print(variable.value) >>> some_value
 
+def loop_for(function):
+    block_entry = function.basic_blocks[0]
+    block_entry.instructions[-1].erase_from_parent()
+    block_loop = function.append_basic_block('loop')
+    block_after = function.basic_blocks[1]
+    builder = Builder.new(block_entry)
 
+    builder.branch(block_loop)
+    builder.position_at_end(block_loop)
+
+    variable_phi = builder.phi(Type.double(), 'i')
+    variable_phi.add_incoming(Constant.real(Type.double(), 1), block_entry)
+    #something body
+    step_value = Constant.real(Type.double(), 1)
+    next_value = builder.fadd(variable_phi, step_value, "next")
+
+    end_condition_bool = builder.fcmp(ICMP_EQ, Constant.real(Type.double(), 3), variable_phi, "end_cond")
+
+    builder.cbranch(end_condition_bool, block_after, block_loop)
+    builder.position_at_end(block_after)
+    variable_phi.add_incoming(next_value, block_loop)
 
 def obfuscate_function(function):
     #name_length = 8
@@ -109,14 +129,15 @@ def obfuscate_function(function):
 
     rand_graph = generate_graph(4, 3)
     insert_graph_into_func(rand_graph, function, (0, 1))
-    #TODO for Alex: check hypothesis: "function.basic_blocks" return block in call order. If yes then place=(0,1) transform place=1
+    #TODO for Alex!!!!: check hypothesis: "function.basic_blocks" return block in call order. If yes then place=(0,1) transform place=1
 
 def obfuscate_module(module):
     #integer_type = Type.int()
     #variable = module.add_global_variable(integer_type, "gv1")
     for function in module.functions:
         if function.name == "compare":
-            obfuscate_function(function)
+            #obfuscate_function(function)
+            loop_for(function)
     print(module.get_function_named("compare"))
 
 if __name__ == '__main__':
