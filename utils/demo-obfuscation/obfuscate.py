@@ -87,7 +87,7 @@ def insert_something_between(block_A, block_start, block_finish, block_B):
 
 
 
-def fill_block_a_trash(block):
+def create_variable(block):
     builder = Builder.new(block)
     instruction_name_length = 10
     instruction_name = get_random_string(instruction_name_length)
@@ -98,6 +98,36 @@ def fill_block_a_trash(block):
 
     #TODO for all: write class variable. Something like that ->>   variable.create_var("some_value")
     #print(variable.value) >>> some_value
+
+def if_then_else(function):
+    block_entry = function.basic_blocks[0]
+    block_entry.instructions[-1].erase_from_parent()
+    block_then = function.append_basic_block('then')
+    block_else = function.append_basic_block('else')
+    block_after = function.append_basic_block('ifcont')
+    block_B = block_entry = function.basic_blocks[1]
+    builder = Builder.new(block_entry)
+
+    const = Constant.real(Type.double(), 1)
+    memory = builder.alloca(Type.int())
+    builder.store(const, memory)
+    condition = builder.load(memory,name="condition")
+    condition_bool = builder.fcmp(FCMP_ONE, condition, Constant.real(Type.double(), 1), "ifcond")
+    builder.cbranch(condition_bool, block_then, block_else)
+
+    builder.position_at_end(block_then)
+    body = builder.fadd(condition, Constant.real(Type.double(), 1), "body")
+    builder.branch(block_after)
+
+    builder.position_at_end(block_else)
+    body = builder.fadd(condition, Constant.real(Type.double(), 2), "body")
+    builder.branch(block_after)
+
+    builder.position_at_beginning(block_after)
+    phi = builder.phi(Type.double(), 'iftmp')
+    phi.add_incoming(body, block_then)
+    phi.add_incoming(body, block_else)
+    builder.branch(block_B)
 
 def loop_for(function):
     block_entry = function.basic_blocks[0]
