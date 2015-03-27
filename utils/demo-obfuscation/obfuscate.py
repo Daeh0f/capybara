@@ -105,7 +105,7 @@ def if_then_else(function):
     block_then = function.append_basic_block('then')
     block_else = function.append_basic_block('else')
     block_after = function.append_basic_block('ifcont')
-    block_B = block_entry = function.basic_blocks[1]
+    block_B = function.basic_blocks[1]
     builder = Builder.new(block_entry)
 
     const = Constant.real(Type.double(), 1)
@@ -158,7 +158,7 @@ def obfuscate_function(function):
     #insert_block_between(function.basic_blocks[0], function.basic_blocks[1], new_trash_block)
 
     rand_graph = generate_graph(4, 3)
-    insert_graph_into_func(rand_graph, function, (0, 1))
+    insert_graph_into_func(rand_graph, function, place=(0, 1))
     #TODO for Alex!!!!: check hypothesis: "function.basic_blocks" return block in call order. If yes then place=(0,1) transform place=1
 
 def obfuscate_module(module):
