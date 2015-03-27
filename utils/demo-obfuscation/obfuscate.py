@@ -130,26 +130,27 @@ def if_then_else(function):
     builder.branch(block_B)
 
 def loop_for(function):
-    block_entry = function.basic_blocks[0]
+    block_entry = function.basic_blocks[1]
+    operand_one, operand_three, operand_two = block_entry.instructions[-1].operands
+    #instr_name = block_entry.instructions[-1].opcode_name
     block_entry.instructions[-1].erase_from_parent()
+    block_after = operand_two
     block_loop = function.append_basic_block('loop')
-    block_after = function.basic_blocks[1]
+
     builder = Builder.new(block_entry)
+    builder.cbranch(operand_one, block_loop, operand_three)
 
-    builder.branch(block_loop)
     builder.position_at_end(block_loop)
-
     variable_phi = builder.phi(Type.double(), 'i')
     variable_phi.add_incoming(Constant.real(Type.double(), 1), block_entry)
     #something body
     step_value = Constant.real(Type.double(), 1)
     next_value = builder.fadd(variable_phi, step_value, "next")
+    variable_phi.add_incoming(next_value, block_loop)
 
     end_condition_bool = builder.fcmp(ICMP_EQ, Constant.real(Type.double(), 3), variable_phi, "end_cond")
-
     builder.cbranch(end_condition_bool, block_after, block_loop)
-    builder.position_at_end(block_after)
-    variable_phi.add_incoming(next_value, block_loop)
+    builder.position_at_beginning(block_after)
 
 def obfuscate_function(function):
     #name_length = 8
