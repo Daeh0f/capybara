@@ -4,14 +4,14 @@ from llvm import *
 from llvm.core import *
 import networkx as nx
 
+def get_random_string(length):
+    return ''.join(rnd.choice(string.ascii_uppercase + string.digits) for _ in range(length))
+
 def randone():
     if int(os.urandom(1).encode('hex'), 16) % 2 == 0:
         return 0
     else:
         return 1
-
-def get_random_string(length):
-    return ''.join(rnd.choice(string.ascii_uppercase + string.digits) for _ in range(length))
 
 def get_nodes_appropriate_level(graph, root, level):
     list_of_nodes = set([root])
@@ -55,7 +55,7 @@ def generate_graph(number_successors, depth):
         nodes = get_nodes_appropriate_level(digraph, rnd_name_list[0], level)
     return digraph
 
-def insert_graph_into_func(graph, function, place=(0, 1)):
+def insert_graph_into_func(graph, function, place=(0, 1), kind=''):
     block_dict = {}
     for n in graph.nodes():
         block = function.append_basic_block(str(n))
@@ -76,26 +76,32 @@ def insert_graph_into_func(graph, function, place=(0, 1)):
                     block_value = Constant.int(Type.int(), i)
                     switch.add_case(block_value, block_dict[graph.successors(node)[i - 1]])
             else:
-                insert_something_between(place[0], block_dict[rnd_name_list[0]], block_dict[node], place[1])
+                insert_something_between(place[0], block_dict[rnd_name_list[0]], block_dict[node], place[1], kind)
                 flag = False
         counter += 1
 
-def insert_something_between(block_A, block_start, block_finish, block_B):
-    "You may insert something like block or graph between block A and B"
-    builder_A = Builder.new(block_A)
-    block_A.instructions[-1].erase_from_parent()
-    builder_A.branch(block_start)
-    builder_fi = Builder.new(block_finish)
-    builder_fi.branch(block_B)
+def insert_something_between(block_A, block_start, block_finish, block_B, kind):
+    if kind == 'branch':
+        builder_A = Builder.new(block_A)
+        block_A.instructions[-1].erase_from_parent()
+        builder_A.branch(block_start)
+        builder_fi = Builder.new(block_finish)
+        builder_fi.branch(block_B)
+    if kind == 'cbranch':
+        operand_one, operand_three, operand_two = block_A.instructions[-1].operands
+        block_A.instructions[-1].erase_from_parent()
+        block_B = operand_two
+        builder = Builder.new(block_A)
+        builder.cbranch(operand_one, block_start, operand_three)
+        builder.position_at_end(block_finish)
+        builder.branch(block_B)
 
 def main(function):
-    flag = True
     for block in function.basic_blocks:
-        if block.instructions[-1].opcode_name == 'br' and len(block.instructions[-1].operands) == 1:
-            if flag:
-                graph = generate_graph(number_successors=rnd.randint(2, 4), depth=rnd.randint(2, 4))
-                insert_graph_into_func(graph, function, place=(block, block.instructions[-1].operands[0]))
-                flag = False
-                print('yes')
-            else:
-                flag = True
+        if block.instructions[-1].opcode_name == 'br' and len(block.instructions[-1].operands) == 1 and randone():
+            graph = generate_graph(number_successors=rnd.randint(2, 4), depth=rnd.randint(2, 4))
+            insert_graph_into_func(graph, function, place=(block, block.instructions[-1].operands[0]), kind='branch')
+        if block.instructions[-1].opcode_name == 'br' and len(block.instructions[-1].operands) == 3 and randone():
+            graph = generate_graph(number_successors=rnd.randint(2, 4), depth=rnd.randint(2, 4))
+            insert_graph_into_func(graph, function, place=(block, block.instructions[-1].operands[rnd.randint(1, 2)]), kind='cbranch')
+
