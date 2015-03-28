@@ -1,8 +1,14 @@
 import random as rnd
-import string
+import string, os
 from llvm import *
 from llvm.core import *
 import networkx as nx
+
+def randone():
+    if int(os.urandom(1).encode('hex'), 16) % 2 == 0:
+        return 0
+    else:
+        return 1
 
 def get_random_string(length):
     return ''.join(rnd.choice(string.ascii_uppercase + string.digits) for _ in range(length))
