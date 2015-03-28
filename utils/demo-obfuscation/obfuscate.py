@@ -85,8 +85,6 @@ def insert_something_between(block_A, block_start, block_finish, block_B):
     builder_fi = Builder.new(block_finish)
     builder_fi.branch(block_B)
 
-
-
 def create_variable(block):
     builder = Builder.new(block)
     instruction_name_length = 10
