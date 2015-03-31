@@ -79,6 +79,7 @@ def insert_graph_into_func(graph, function, place=(0, 1), kind=''):
                 insert_something_between(place[0], block_dict[rnd_name_list[0]], block_dict[node], place[1], kind)
                 flag = False
         counter += 1
+        #TODO: The merging is necessary make with br (not switch)
 
 def insert_something_between(block_A, block_start, block_finish, block_B, kind):
     if kind == 'branch':
@@ -95,13 +96,33 @@ def insert_something_between(block_A, block_start, block_finish, block_B, kind):
         builder.cbranch(operand_one, block_start, operand_three)
         builder.position_at_end(block_finish)
         builder.branch(block_B)
+    if kind == 'switch':
+        operands = [n for n in block_A.instructions[-1].operands]
+        block_A.instructions[-1].erase_from_parent()
+        builder = Builder.new(block_A)
+        switch = builder.switch(operands[0], operands[1], len(operands)-2)
+        operands = operands[2:]
+        for value, block in zip(operands[0::2], operands[1::2]):
+            if block == block_B:
+                switch.add_case(value, block_start)
+            else:
+                switch.add_case(value, block_start)
+        builder.position_at_end(block_finish)
+        builder.branch(block_B)
 
 def main(function):
     for block in function.basic_blocks:
         if block.instructions[-1].opcode_name == 'br' and len(block.instructions[-1].operands) == 1 and randone():
             graph = generate_graph(number_successors=rnd.randint(2, 4), depth=rnd.randint(2, 4))
             insert_graph_into_func(graph, function, place=(block, block.instructions[-1].operands[0]), kind='branch')
+
         if block.instructions[-1].opcode_name == 'br' and len(block.instructions[-1].operands) == 3 and randone():
             graph = generate_graph(number_successors=rnd.randint(2, 4), depth=rnd.randint(2, 4))
             insert_graph_into_func(graph, function, place=(block, block.instructions[-1].operands[rnd.randint(1, 2)]), kind='cbranch')
 
+        if block.instructions[-1].opcode_name == 'switch': # and randone():
+            graph = generate_graph(number_successors=rnd.randint(2, 4), depth=rnd.randint(2, 4))
+            examle = [1]
+            if len(block.instructions[-1].operands) > 2:
+                examle = [n for n in range(3, 2, len(block.instructions[-1].operands))]
+            insert_graph_into_func(graph, function, place=(block, block.instructions[-1].operands[rnd.sample(examle, 1)[0]]), kind='switch')
