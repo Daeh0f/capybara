@@ -38,22 +38,28 @@ def search_of_OIOO(ways):   # OIOO - 0_0 ?? look at header
     list_of_OIOO = []
     for path in ways:
         for node in path:
-            if not deep_in(list_of_OIOO, node):
-                ways_list = [curr_path for curr_path in ways if node in curr_path]
-                for i in range(1,len(min_by_len(ways_list))-2):
-                    last_node = ways_list[0][-i]
-                    search_flag = True
-                    for pa in ways_list[1:]:
+            ways_with_node = [way for way in ways if node in way]
+            if len(ways_with_node) > 1:
+                for next_node in path[path.index(node)+1:]:
+                    is_check = True
+                    for way in ways_with_node:
                         try:
-                            pa.index(last_node)
-                        except ValueError:
-                            search_flag = False
+                            way.index(next_node)
+                        except:
+                            is_check = False
                             break
-                    if search_flag:
-                        list_of_OIOO.append([node, last_node])
-                        print(list_of_OIOO[-1][0])
-                        print(list_of_OIOO[-1][1] )
-                        break
+                    if is_check:
+                        list_of_OIOO.append([node, next_node])
+            else:
+                ways_without_node = [way for way in ways if node not in way]
+                for next_node in path[path.index(node)+1:]:
+                    for way in ways_without_node:
+                        try:
+                            way.index(next_node)
+                            break
+                        except:
+                            continue
+                    list_of_OIOO.append([node, path[path.index(next_node)-1]])
     return list_of_OIOO
 
 
