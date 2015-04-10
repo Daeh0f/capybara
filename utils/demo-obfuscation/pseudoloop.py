@@ -19,15 +19,6 @@ def find_all_paths(function):
             paths.append(path)
     return paths
 
-def min_by_len(list_of_lists):
-    min = 999999999
-    min_list = []
-    for lst in list_of_lists:
-        if len(lst) < min:
-            min = len(lst)
-            min_list = lst
-    return min_list
-
 def deep_in(lst, element):
     for i in lst:
         if element in i:
@@ -35,10 +26,11 @@ def deep_in(lst, element):
     return False
 
 def search_of_OIOO(ways):   # OIOO - 0_0 ?? look at header
-    list_of_OIOO = []
+    list_of_OIOO = set()
     for path in ways:
         for node in path:
             ways_with_node = [way for way in ways if node in way]
+            ways_without_node = [way for way in ways if node not in way]
             if len(ways_with_node) > 1:
                 for next_node in path[path.index(node)+1:]:
                     is_check = True
@@ -48,10 +40,9 @@ def search_of_OIOO(ways):   # OIOO - 0_0 ?? look at header
                         except:
                             is_check = False
                             break
-                    if is_check:
-                        list_of_OIOO.append([node, next_node])
+                    if is_check and not deep_in(ways_without_node, next_node):
+                        list_of_OIOO.add((node, next_node))
             else:
-                ways_without_node = [way for way in ways if node not in way]
                 for next_node in path[path.index(node)+1:]:
                     for way in ways_without_node:
                         try:
@@ -59,7 +50,7 @@ def search_of_OIOO(ways):   # OIOO - 0_0 ?? look at header
                             break
                         except:
                             continue
-                    list_of_OIOO.append([node, path[path.index(next_node)-1]])
+                    list_of_OIOO.add((node, path[path.index(next_node)-1]))
     return list_of_OIOO
 
 
