@@ -63,23 +63,30 @@ def search_of_OIOO(ways):   # OIOO - 0_0 ?? look at header
                         list_of_OIOO.add((node, path[path.index(next_node)]))
     return list_of_OIOO
 
-def create_pseudoloop(block_start, block_loop, block_end, kind='br2br'):
-    pass
-    if kind == 'br2br':
-        block_loop = block_start.instructions[-1].operands[0]
-        #print(block_loop)
-        builder = Builder.new(block_loop)
-        builder.position_at_beginning(block_loop)
-        variable_phi = builder.phi(Type.double(), 'i')
-        variable_phi.add_incoming(Constant.real(Type.double(), 0), block_start)
-        next_value = builder.fadd(variable_phi, Constant.real(Type.double(), 1), "next")
-        variable_phi.add_incoming(next_value, block_end)
+def create_pseudoloop(block_start, block_end):
+    block_loop = block_start.splitBasicBlock(block_start.instructions[len(block_start.instructions)/2-1], 'loop')
+    builder = Builder.new(block_loop)
+    builder.position_at_beginning(block_loop)
+    variable_phi = builder.phi(Type.double(), 'i')
+    variable_phi.add_incoming(Constant.real(Type.double(), 0), block_start)
+    next_value = builder.fadd(variable_phi, Constant.real(Type.double(), 1), "next")
+    variable_phi.add_incoming(next_value, block_end)
 
+    if block_end.instructions[-1].opcode_name == 'br' and len(block_end.instructions[-1].operands) == 1:
         builder.position_at_end(block_end)
         block_after = block_end.instructions[-1].operands[0]
         block_end.instructions[-1].erase_from_parent()
-        end_condition_bool = builder.fcmp(ICMP_EQ, Constant.real(Type.double(), 1), variable_phi, "end_cond")
+        end_condition_bool = builder.fcmp(ICMP_EQ, Constant.real(Type.double(), 0), variable_phi, "end_cond")
         builder.cbranch(end_condition_bool, block_after, block_loop)
+
+    if block_end.instructions[-1].opcode_name == 'br' and len(block_end.instructions[-1].operands) == 3:
+        builder.position_at_end(block_end)
+        cond, block_true, block_false = block_end.instructions[-1].operands
+        block_end.instructions[-1].erase_from_parent()
+        cond_int = builder.uitofp(cond, Type.float(), 'float_value')
+        switch = builder.switch(cond, block_loop)
+        switch.add_case(Constant.int(Type.int(), 0), block_true)
+        switch.add_case(Constant.int(Type.int(), 1), block_false)
 
 def decision_making(list_of_OIOO, function):
     list_of_OIOO = list(list_of_OIOO)
