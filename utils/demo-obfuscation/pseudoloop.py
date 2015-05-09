@@ -1,5 +1,5 @@
 import random as rnd
-import string
+import string,re
 from llvm import *
 from llvm.core import *
 import networkx as nx
@@ -60,7 +60,7 @@ def search_of_OIOO(ways):   # OIOO - 0_0 ?? look at header
                         except:
                             continue
                     if is_check and node != next_node:
-                        list_of_OIOO.add((node, path[path.index(next_node)]))
+                        list_of_OIOO.add((node, next_node))
     return list_of_OIOO
 
 def create_pseudoloop(block_start, block_end):
@@ -81,24 +81,48 @@ def create_pseudoloop(block_start, block_end):
 
     if block_end.instructions[-1].opcode_name == 'br' and len(block_end.instructions[-1].operands) == 3:
         builder.position_at_end(block_end)
-        cond, block_true, block_false = block_end.instructions[-1].operands
+        cond, block_false, block_true = block_end.instructions[-1].operands
         block_end.instructions[-1].erase_from_parent()
-        cond_int = builder.uitofp(cond, Type.float(), 'float_value')
+        #cond_int = builder.uitofp(cond, Type.float(), 'float_value')
         switch = builder.switch(cond, block_loop)
-        switch.add_case(Constant.int(Type.int(), 0), block_true)
-        switch.add_case(Constant.int(Type.int(), 1), block_false)
+        switch.add_case(Constant.int(Type.int(), 0), block_false)
+        switch.add_case(Constant.int(Type.int(), 1), block_true)
 
-def decision_making(list_of_OIOO, function):
-    list_of_OIOO = list(list_of_OIOO)
-    block_start = list_of_OIOO[1][0]
-    block_end = list_of_OIOO[1][1]
-    create_pseudoloop(block_start, block_loop='', block_end=block_end)
+    if block_end.instructions[-1].opcode_name == 'switch':
+        operands = [n for n in block_end.instructions[-1].operands]
+        block_end.instructions[-1].erase_from_parent()
+
+        switch = builder.switch(operands[0], operands[1], len(operands)-2)
+        operands = operands[2:]
+        for value, block in zip(operands[0::2], operands[1::2]):
+
+
+def func_has_a_loop(function):
+    return False
+
+def decision_making(function):
+    if not func_has_a_loop(function):
+        #all_ways = find_all_paths(function)
+        #list_of_OIOO = list(search_of_OIOO(all_ways))
+        #block_start = list_of_OIOO[1][0]
+        #block_end = list_of_OIOO[1][1]
+        create_pseudoloop(function.basic_blocks[0], function.basic_blocks[1])
 
 if __name__ == '__main__':
     llfile = file("crackme.ll")
     module = Module.from_assembly(llfile)
-    #print module
-    function = module.get_function_named('main')
+    print(module.get_function_named('compare'))
+    decision_making(module.get_function_named('compare'))
+    print(module.get_function_named('compare'))
+    '''
+    for func in module.functions:
+        decision_making(func)
+        '''
+    obfuscated_bitcode_file = file("obfuscated_crackme.bc", "w")
+    module.to_bitcode(obfuscated_bitcode_file)
+
+
+    '''function = module.get_function_named('main')
     print(function)
     function.basic_blocks[1].instructions[-1].erase_from_parent()
     block_new = function.append_basic_block('<label>: 15')
@@ -107,7 +131,6 @@ if __name__ == '__main__':
     builder.position_at_end(block_new)
     builder.branch(function.basic_blocks[-2])
 
+
     decision_making(search_of_OIOO(find_all_paths(function)), function)
-    print(function)
-    obfuscated_bitcode_file = file("obfuscated_crackme.bc", "w")
-    module.to_bitcode(obfuscated_bitcode_file)
+    print(function)'''
