@@ -89,13 +89,11 @@ def create_pseudoloop(block_start, block_end):
         switch.add_case(Constant.int(Type.int(), 1), block_true)
 
     if block_end.instructions[-1].opcode_name == 'switch':
-        operands = [n for n in block_end.instructions[-1].operands]
+        block_switch = block_end.splitBasicBlock(block_end.instructions[len(block_end.instructions)/2-1], 'switch')
         block_end.instructions[-1].erase_from_parent()
-
-        switch = builder.switch(operands[0], operands[1], len(operands)-2)
-        operands = operands[2:]
-        for value, block in zip(operands[0::2], operands[1::2]):
-
+        builder.position_at_end(block_end)
+        end_condition_bool = builder.fcmp(ICMP_EQ, Constant.real(Type.double(), 0), variable_phi, "end_cond")
+        builder.cbranch(end_condition_bool, block_switch, block_loop)
 
 def func_has_a_loop(function):
     return False
@@ -114,23 +112,7 @@ if __name__ == '__main__':
     print(module.get_function_named('compare'))
     decision_making(module.get_function_named('compare'))
     print(module.get_function_named('compare'))
-    '''
-    for func in module.functions:
-        decision_making(func)
-        '''
     obfuscated_bitcode_file = file("obfuscated_crackme.bc", "w")
     module.to_bitcode(obfuscated_bitcode_file)
 
 
-    '''function = module.get_function_named('main')
-    print(function)
-    function.basic_blocks[1].instructions[-1].erase_from_parent()
-    block_new = function.append_basic_block('<label>: 15')
-    builder = Builder.new(function.basic_blocks[1])
-    builder.branch(block_new)
-    builder.position_at_end(block_new)
-    builder.branch(function.basic_blocks[-2])
-
-
-    decision_making(search_of_OIOO(find_all_paths(function)), function)
-    print(function)'''
