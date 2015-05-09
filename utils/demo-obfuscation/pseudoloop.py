@@ -95,6 +95,13 @@ def create_pseudoloop(block_start, block_end):
         end_condition_bool = builder.fcmp(ICMP_EQ, Constant.real(Type.double(), 0), variable_phi, "end_cond")
         builder.cbranch(end_condition_bool, block_switch, block_loop)
 
+    if block_end.instructions[-1].opcode_name == 'ret':
+        block_ret = block_end.splitBasicBlock(block_end.instructions[len(block_end.instructions)/2-1], 'ret')
+        block_end.instructions[-1].erase_from_parent()
+        builder.position_at_end(block_end)
+        end_condition_bool = builder.fcmp(ICMP_EQ, Constant.real(Type.double(), 0), variable_phi, "end_cond")
+        builder.cbranch(end_condition_bool, block_ret, block_loop)
+        
 def func_has_a_loop(function):
     return False
 
