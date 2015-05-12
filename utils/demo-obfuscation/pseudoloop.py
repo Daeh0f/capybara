@@ -4,27 +4,32 @@ from llvm import *
 from llvm.core import *
 import networkx as nx
 
-#area with one input and one output  == OIOO
-
-#notion: CFG is considered without loop!
+#isolated_graph = area with one input and one output (OIOO)
 
 def get_random_string(length):
     return ''.join(rnd.choice(string.ascii_uppercase + string.digits) for _ in range(length))
 
-def find_all_paths(function):
+def find_all_paths(function, input_block=None, output_block=None):
     graph = nx.DiGraph()
     terminators = []
-    graph.add_node(function.basic_blocks[0])
+    if input_block and output_block:
+        graph.add_node(input_block)
+    else:
+        graph.add_node(function.basic_blocks[0])
+
     for block in function.basic_blocks:
         for successor in block.successors:
             graph.add_edge(block, successor)
-        if block.terminator.opcode_name == 'ret': # warning! resume terminator is not tracked. Fix it please
+        if block.terminator.opcode_name in ('ret', 'resume', 'invoke'): # warning! if you have problem - look at invoke terminator. It guards me <_<
             terminators.append(block)
     ways = []
-    for ter in terminators:
-        for path in nx.all_simple_paths(graph, source=function.basic_blocks[0], target=ter): # The function.basic_blocks[0] is bad way!
-            ways.append(path)
-    return ways
+    if input_block and output_block:
+        return list(nx.all_simple_paths(graph, source=input_block, target=output_block))
+    else:
+        for ter in terminators:
+            for path in nx.all_simple_paths(graph, source=function.basic_blocks[0], target=ter):
+                ways.append(path)
+        return ways
 
 def deep_in(lst, element):
     for i in lst:
@@ -32,7 +37,7 @@ def deep_in(lst, element):
             return True
     return False
 
-def search_of_OIOO(ways):   # OIOO - 0_0 ?? look at header
+def search_isolated_graph(ways):
     list_of_OIOO = set()
     for path in ways:
         for node in path:
@@ -101,24 +106,19 @@ def create_pseudoloop(block_start, block_end):
         builder.position_at_end(block_end)
         end_condition_bool = builder.fcmp(ICMP_EQ, Constant.real(Type.double(), 0), variable_phi, "end_cond")
         builder.cbranch(end_condition_bool, block_ret, block_loop)
-        
-def func_has_a_loop(function):
-    return False
 
 def decision_making(function):
-    if not func_has_a_loop(function):
-        #all_ways = find_all_paths(function)
-        #list_of_OIOO = list(search_of_OIOO(all_ways))
-        #block_start = list_of_OIOO[1][0]
-        #block_end = list_of_OIOO[1][1]
-        create_pseudoloop(function.basic_blocks[0], function.basic_blocks[1])
+    all_ways = find_all_paths(function)
+    list_isograph = search_isolated_graph(all_ways)
+    for isograph in list_isograph:
+        create_pseudoloop(block_start=isograph[0], block_end=isograph[1])
 
 if __name__ == '__main__':
     llfile = file("crackme.ll")
     module = Module.from_assembly(llfile)
-    print(module.get_function_named('compare'))
-    decision_making(module.get_function_named('compare'))
-    print(module.get_function_named('compare'))
+    print(module.get_function_named('main'))
+    decision_making(module.get_function_named('main'))
+    print(module.get_function_named('main'))
     obfuscated_bitcode_file = file("obfuscated_crackme.bc", "w")
     module.to_bitcode(obfuscated_bitcode_file)
 
