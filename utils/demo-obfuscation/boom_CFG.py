@@ -126,3 +126,4 @@ def main(function):
             if len(block.instructions[-1].operands) > 2:
                 examle = [n for n in range(3, 2, len(block.instructions[-1].operands))]
             insert_graph_into_func(graph, function, place=(block, block.instructions[-1].operands[rnd.sample(examle, 1)[0]]), kind='switch')
+#TODO: link node from different levels of graph
