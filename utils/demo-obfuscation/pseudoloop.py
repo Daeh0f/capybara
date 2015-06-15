@@ -121,5 +121,3 @@ if __name__ == '__main__':
     print(module.get_function_named('main'))
     obfuscated_bitcode_file = file("obfuscated_crackme.bc", "w")
     module.to_bitcode(obfuscated_bitcode_file)
-
-
