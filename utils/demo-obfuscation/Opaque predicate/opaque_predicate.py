@@ -20,7 +20,7 @@ def opaque_condition(block, function, x=None):
         builder.store(const, memory)   # write value to memory
         x = builder.load(memory, name="x")
 
-    #(x^n-x) modn == 0. n is odd
+    #(x^n-x) modn == 0
     n = Constant.real(Type.float(), 3)
     raise_to_a_power = builder.call(pow_oper, [x, n], 'x^n')
     subtraction = builder.sub(raise_to_a_power, x, 'x^n_minus_x')

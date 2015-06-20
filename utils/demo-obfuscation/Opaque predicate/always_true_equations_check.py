@@ -1,7 +1,7 @@
 __author__ = 'Alexey'
 
 def modulo():
-    '''(x^n-x) modn == 0. size(x^n) <= 32 bits'''
+    '''Check combinations (x, n) for equation (x^n-x) modn == 0. size(x^n) <= 32 bits'''
     couples_x_n = dict()
     for n in range(2, 32):
         x = 1
